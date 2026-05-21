@@ -17,7 +17,8 @@ async function startServer() {
         return res.status(500).json({ error: "Chave STRIPE_SECRET_KEY não configurada." });
       }
 
-      const stripe = new Stripe(stripeKey, { apiVersion: "2025-02-24" });
+      // @ts-ignore
+      const stripe = new Stripe(stripeKey);
       const { cart, customer } = req.body;
       
       const appUrl = process.env.APP_URL || `http://localhost:${PORT}`;
@@ -70,7 +71,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0" as any, () => {
+  app.listen(PORT as number, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
