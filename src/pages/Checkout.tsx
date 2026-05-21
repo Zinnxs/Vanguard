@@ -7,7 +7,7 @@ import { CreditCard, QrCode, CheckCircle2 } from 'lucide-react';
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { cart, clearCart, addOrder, currentUser } = useStore();
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('pix');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix' | 'stripe'>('stripe');
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -35,10 +35,34 @@ export const Checkout: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckout = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     
+    if (paymentMethod === 'stripe') {
+      try {
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cart, customer: formData })
+        });
+        
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Erro ao criar sessão de pagamento: ' + (data.error || 'Desconhecido'));
+          setIsProcessing(false);
+        }
+      } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Erro ao conectar com o serviço de pagamento.');
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // fallback if still using PIX (or we can just remove PIX if exclusively using Stripe)
     setTimeout(() => {
       const orderId = `LUM-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
       addOrder({
@@ -60,7 +84,7 @@ export const Checkout: React.FC = () => {
       setIsProcessing(false);
       setIsSuccess(true);
       
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => navigate('/pedidos'), 3000);
     }, 1500);
   };
 
@@ -167,7 +191,18 @@ export const Checkout: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]"></span>
                 Pagamento
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('stripe')}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-6 border transition-all text-[#A1A1AA]",
+                    paymentMethod === 'stripe' ? "border-white text-white bg-[#1A1A1A]" : "border-[#262626] hover:border-gray-500 bg-[#0A0A0A]"
+                  )}
+                >
+                  <CreditCard className="h-6 w-6 mb-3" />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">Stripe</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('pix')}
@@ -188,13 +223,28 @@ export const Checkout: React.FC = () => {
                   )}
                 >
                   <CreditCard className="h-6 w-6 mb-3" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">Cartão</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold">Cartão (Simulado)</span>
                 </button>
               </div>
 
               {/* Dynamic Payment Body */}
               <div className="mt-8">
-                {paymentMethod === 'pix' ? (
+                {paymentMethod === 'stripe' ? (
+                  <div className="bg-[#0E0E0E] border border-[#262626] p-8 flex flex-col items-center text-center">
+                    <strong className="text-lg font-light text-white mb-2 uppercase tracking-widest">Pagamento Seguro com Stripe</strong>
+                    <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA] mb-8 max-w-sm leading-relaxed">Você será redirecionado para o ambiente seguro do Stripe para finalizar a compra.</p>
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className={cn(
+                        "w-full sm:w-auto px-8 py-4 bg-white text-black text-[11px] font-bold uppercase tracking-widest hover:bg-neutral-200 transition-all",
+                        isProcessing && "opacity-50 cursor-wait"
+                      )}
+                    >
+                      {isProcessing ? "Redirecionando..." : `Pagar ${formatPrice(subtotal)} com Stripe`}
+                    </button>
+                  </div>
+                ) : paymentMethod === 'pix' ? (
                   <div className="bg-[#0E0E0E] border border-[#262626] p-8 flex flex-col items-center text-center">
                     <div className="p-4 bg-white mb-6">
                        <img 

@@ -16,6 +16,8 @@ import { Admin } from './pages/Admin';
 import { Login } from './pages/Login';
 import { UserOrders } from './pages/UserOrders';
 
+import { CheckoutSuccess, CheckoutCancel } from './pages/StripeResult';
+
 export default function App() {
   return (
     <StoreProvider>
@@ -30,6 +32,8 @@ export default function App() {
                 <Route path="/produto/:id" element={<ProductPage />} />
                 <Route path="/carrinho" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
+                <Route path="/checkout/cancela" element={<CheckoutCancel />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/pedidos" element={<UserOrders />} />
