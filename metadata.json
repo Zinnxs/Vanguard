@@ -1,0 +1,6 @@
+{
+  "name": "E-Commerce Mock",
+  "description": "A full-functional e-commerce shop with mock data.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
